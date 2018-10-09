@@ -58,7 +58,7 @@
 ///     }
 ///
 /// See ForeignKey for more information.
-public struct BelongsToAssociation<Origin, Destination>: Association {
+public struct BelongsToAssociation<Origin, Destination>: ToOneAssociation {
     /// :nodoc:
     public typealias OriginRowDecoder = Origin
     
@@ -70,13 +70,23 @@ public struct BelongsToAssociation<Origin, Destination>: Association {
     /// :nodoc:
     public let joinCondition: JoinCondition
     
-    /// :nodoc:
-    public var query: AssociationQuery
-
+    private var query: AssociationQuery
+    
+    init(key: String, joinCondition: JoinCondition, query: AssociationQuery) {
+        self.key = key
+        self.joinCondition = joinCondition
+        self.query = query
+    }
+    
     public func forKey(_ key: String) -> BelongsToAssociation<Origin, Destination> {
         var association = self
         association.key = key
         return association
+    }
+    
+    /// :nodoc:
+    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
+        return query
     }
     
     /// :nodoc:

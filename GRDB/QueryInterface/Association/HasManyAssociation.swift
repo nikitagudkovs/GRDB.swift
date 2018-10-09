@@ -58,7 +58,7 @@
 ///     }
 ///
 /// See ForeignKey for more information.
-public struct HasManyAssociation<Origin, Destination>: Association {
+public struct HasManyAssociation<Origin, Destination>: ToManyAssociation {
     /// :nodoc:
     public typealias OriginRowDecoder = Origin
     
@@ -77,6 +77,11 @@ public struct HasManyAssociation<Origin, Destination>: Association {
         var association = self
         association.key = key
         return association
+    }
+    
+    /// :nodoc:
+    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
+        return query
     }
     
     /// :nodoc:

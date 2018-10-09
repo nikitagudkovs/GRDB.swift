@@ -49,13 +49,13 @@ public protocol Association: DerivableRequest {
     func forKey(_ key: String) -> Self
     
     /// :nodoc:
-    var query: AssociationQuery { get }
+    func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery
     
     /// :nodoc:
     var joinCondition: JoinCondition { get }
     
     /// :nodoc:
-    func mapQuery(_ transform: (AssociationQuery) -> AssociationQuery) -> Self
+    func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> Self
 }
 
 extension Association {
@@ -211,6 +211,59 @@ extension Association {
     }
 }
 
+/// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
+///
+/// Not to be mismatched with SQL join operators (inner join, left join).
+///
+/// AssociationJoinOperator is designed to be hierarchically nested, unlike
+/// SQL join operators.
+///
+/// Consider the following request for (A, B, C) tuples:
+///
+///     let r = A.including(optional: A.b.including(required: B.c))
+///
+/// It chains three associations, the first optional, the second required.
+///
+/// It looks like it means: "Give me all As, along with their Bs, granted those
+/// Bs have their Cs. For As whose B has no C, give me a nil B".
+///
+/// It can not be expressed as one left join, and a regular join, as below,
+/// Because this would not honor the first optional:
+///
+///     -- dubious
+///     SELECT a.*, b.*, c.*
+///     FROM a
+///     LEFT JOIN b ON ...
+///     JOIN c ON ...
+///
+/// Instead, it should:
+/// - allow (A + missing (B + C))
+/// - prevent (A + (B + missing C)).
+///
+/// This can be expressed in SQL with two left joins, and an extra condition:
+///
+///     -- likely correct
+///     SELECT a.*, b.*, c.*
+///     FROM a
+///     LEFT JOIN b ON ...
+///     LEFT JOIN c ON ...
+///     WHERE NOT((b.id IS NOT NULL) AND (c.id IS NULL)) -- no B without C
+///
+/// This is currently not implemented, and requires a little more thought.
+/// I don't even know if inventing a whole new way to perform joins should even
+/// be on the table. But we have a hierarchical way to express joined queries,
+/// and they have a meaning:
+///
+///     // what is my meaning?
+///     A.including(optional: A.b.including(required: B.c))
+///
+/// :nodoc:
+public enum AssociationJoinOperator {
+    case required, optional
+}
+
+/// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
+///
 /// The condition that links two joined tables.
 ///
 /// We only support one kind of join condition, today: foreign keys.
@@ -230,6 +283,7 @@ extension Association {
 ///     let request = Book
 ///         .include(required: Book.author)
 ///         .include(required: Book.author)
+/// :nodoc:
 public struct JoinCondition: Equatable {
     var foreignKeyRequest: ForeignKeyRequest
     var originIsLeft: Bool
@@ -303,7 +357,7 @@ extension Association where OriginRowDecoder: MutablePersistableRecord {
         
         // Turn the association request into a query interface request:
         // JOIN association -> SELECT FROM association
-        return QueryInterfaceRequest(query)
+        return QueryInterfaceRequest(query(.required)) // TODO: reverse everything
             
             // Turn the JOIN condition into a regular WHERE condition
             .filter { db in
@@ -329,3 +383,9 @@ extension Association where OriginRowDecoder: MutablePersistableRecord {
             .aliased(associationAlias)
     }
 }
+
+/// TODO
+public protocol ToOneAssociation: Association { }
+
+/// TODO
+public protocol ToManyAssociation: Association { }

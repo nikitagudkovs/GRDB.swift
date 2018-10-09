@@ -6,7 +6,7 @@ extension QueryInterfaceRequest where RowDecoder: TableRecord {
         let join = AssociationJoin(
             joinOperator: joinOperator,
             joinCondition: association.joinCondition,
-            query: association.query)
+            query: association.query(joinOperator))
         return QueryInterfaceRequest(query.appendingJoin(join, forKey: association.key))
     }
     

@@ -1,4 +1,6 @@
 /// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
+///
+/// :nodoc:
 public struct AssociationQuery {
     var source: SQLSource
     var selection: [SQLSelectable]
@@ -64,11 +66,11 @@ extension AssociationQuery {
         let join = AssociationJoin(
             joinOperator: joinOperator,
             joinCondition: association.joinCondition,
-            query: association.query)
+            query: association.query(joinOperator))
         return joining(join, forKey: association.key)
     }
     
-    private func joining(_ join: AssociationJoin, forKey key: String) -> AssociationQuery {
+    func joining(_ join: AssociationJoin, forKey key: String) -> AssociationQuery {
         var query = self
         if let existingJoin = query.joins.removeValue(forKey: key) {
             guard let mergedJoin = existingJoin.merged(with: join) else {
