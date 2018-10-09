@@ -4,12 +4,12 @@
 public struct QueryInterfaceRequest<T> {
     let query: QueryInterfaceQuery
     
-    init(query: QueryInterfaceQuery) {
+    init(_ query: QueryInterfaceQuery) {
         self.query = query
     }
     
-    init(_ request: AssociationRequest<T>) {
-        self.query = QueryInterfaceQuery(request.query)
+    init(_ query: AssociationQuery) {
+        self.init(QueryInterfaceQuery(query))
     }
 }
 
@@ -60,7 +60,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///         .select([Column("id")])
     ///         .select([Column("email")])
     public func select(_ selection: [SQLSelectable]) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.select(selection))
+        return QueryInterfaceRequest(query.select(selection))
     }
     
     /// Creates a request which selects *selection*, and fetches values of
@@ -72,7 +72,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///         let maxScore: Int? = try request.fetchOne(db)
     ///     }
     public func select<RowDecoder>(_ selection: [SQLSelectable], as type: RowDecoder.Type) -> QueryInterfaceRequest<RowDecoder> {
-        return QueryInterfaceRequest<RowDecoder>(query: query.select(selection))
+        return QueryInterfaceRequest<RowDecoder>(query.select(selection))
     }
     
     /// Creates a request which selects *selection*, and fetches values of
@@ -107,7 +107,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///         .select([Column("id"), Column("email")])
     ///         .annotated(with: [Column("name")])
     public func annotated(with selection: [SQLSelectable]) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.annotated(with: selection))
+        return QueryInterfaceRequest(query.annotated(with: selection))
     }
 
     /// Creates a request which returns distinct rows.
@@ -120,7 +120,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///     var request = Player.select(Column("name"))
     ///     request = request.distinct()
     public func distinct() -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.distinct())
+        return QueryInterfaceRequest(query.distinct())
     }
     
     /// Creates a request with the provided *predicate promise* added to the
@@ -130,18 +130,18 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///     var request = Player.all()
     ///     request = request.filter { db in true }
     public func filter(_ predicate: @escaping (Database) throws -> SQLExpressible) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.filter(predicate))
+        return QueryInterfaceRequest(query.filter(predicate))
     }
     
     /// Creates a request grouped according to *expressions promise*.
     public func group(_ expressions: @escaping (Database) throws -> [SQLExpressible]) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.group(expressions))
+        return QueryInterfaceRequest(query.group(expressions))
     }
     
     /// Creates a request with the provided *predicate* added to the
     /// eventual set of already applied predicates.
     public func having(_ predicate: SQLExpressible) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.having(predicate))
+        return QueryInterfaceRequest(query.having(predicate))
     }
     
     /// Creates a request with the provided *orderings promise*.
@@ -158,7 +158,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///         .reversed()
     ///         .order{ _ in [Column("name")] }
     public func order(_ orderings: @escaping (Database) throws -> [SQLOrderingTerm]) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.order(orderings))
+        return QueryInterfaceRequest(query.order(orderings))
     }
     
     /// Creates a request that reverses applied orderings.
@@ -173,7 +173,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///     var request = Player.all()
     ///     request = request.reversed()
     public func reversed() -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.reversed())
+        return QueryInterfaceRequest(query.reversed())
     }
     
     /// Creates a request which fetches *limit* rows, starting at *offset*.
@@ -184,7 +184,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///
     /// Any previous limit is replaced.
     public func limit(_ limit: Int, offset: Int? = nil) -> QueryInterfaceRequest<T> {
-        return QueryInterfaceRequest(query: query.limit(limit, offset: offset))
+        return QueryInterfaceRequest(query.limit(limit, offset: offset))
     }
     
     /// Creates a request that allows you to define expressions that target
@@ -205,7 +205,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     ///         .aliased(playerAlias)
     ///         .including(required: Player.team.filter(Column("avgScore") < playerAlias[Column("score")])
     public func aliased(_ alias: TableAlias) -> QueryInterfaceRequest {
-        return QueryInterfaceRequest(query: query.qualified(with: alias))
+        return QueryInterfaceRequest(query.qualified(with: alias))
     }
     
     /// Creates a request bound to type Target.
@@ -222,7 +222,7 @@ extension QueryInterfaceRequest : DerivableRequest, AggregatingRequest {
     /// - parameter type: The fetched type Target
     /// - returns: A typed request bound to type Target.
     public func asRequest<Target>(of type: Target.Type) -> QueryInterfaceRequest<Target> {
-        return QueryInterfaceRequest<Target>(query: query)
+        return QueryInterfaceRequest<Target>(query)
     }
 }
 
@@ -271,7 +271,7 @@ extension TableRecord {
         let query = QueryInterfaceQuery(
             source: .table(tableName: databaseTableName, alias: nil),
             selection: databaseSelection)
-        return QueryInterfaceRequest(query: query)
+        return QueryInterfaceRequest(query)
     }
     
     /// Creates a request which fetches no record.
