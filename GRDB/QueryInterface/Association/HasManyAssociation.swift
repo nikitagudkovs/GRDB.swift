@@ -68,10 +68,20 @@ public struct HasManyAssociation<Origin, Destination>: ToManyAssociation {
     public var key: String
     
     /// :nodoc:
-    public let joinCondition: JoinCondition
+    public var leftKey: String {
+        return key
+    }
     
     /// :nodoc:
-    public var query: AssociationQuery
+    public let joinCondition: JoinCondition
+    
+    private var query: AssociationQuery
+    
+    init(key: String, joinCondition: JoinCondition, query: AssociationQuery) {
+        self.key = key
+        self.joinCondition = joinCondition
+        self.query = query
+    }
     
     public func forKey(_ key: String) -> HasManyAssociation<Origin, Destination> {
         var association = self

@@ -6,6 +6,9 @@ public protocol Association: DerivableRequest {
     associatedtype OriginRowDecoder
     associatedtype RowDecoder
     
+    /// TODO
+    var leftKey: String { get }
+
     /// The association key defines how rows fetched from this association
     /// should be consumed.
     ///

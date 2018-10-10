@@ -43,6 +43,11 @@ public struct HasOneThroughAssociation<Origin, Destination>: ToOneAssociation {
     }
     
     /// :nodoc:
+    public var leftKey: String {
+        return middleKey
+    }
+    
+    /// :nodoc:
     public var joinCondition: JoinCondition {
         return middleJoinCondition
     }
@@ -50,7 +55,7 @@ public struct HasOneThroughAssociation<Origin, Destination>: ToOneAssociation {
     /// :nodoc:
     public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
         let join = AssociationJoin(
-            joinOperator: AssociationJoinOperator.optional, // FIXME
+            joinOperator: joinOperator,
             joinCondition: targetJoinCondition,
             query: targetQuery(joinOperator))
         return middleQuery(joinOperator).joining(join, forKey: key)

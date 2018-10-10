@@ -7,7 +7,7 @@ extension QueryInterfaceRequest where RowDecoder: TableRecord {
             joinOperator: joinOperator,
             joinCondition: association.joinCondition,
             query: association.query(joinOperator))
-        return QueryInterfaceRequest(query.appendingJoin(join, forKey: association.key))
+        return QueryInterfaceRequest(query.appendingJoin(join, forKey: association.leftKey))
     }
     
     // MARK: - Associations

@@ -9,49 +9,207 @@ import XCTest
 
 /// Test SQL generation
 
-// case 1: A -> B -> C
-// case 2: A -> B <- D
-// case 3: B <- A -> E
-// case 4: C <- B <- A
-// case 5: A -> (B -> C) -> F
-// case 6: A -> B -> (C -> F)
-// case 7: F <- (C <- B) <- A
-// case 8: F <- C <- (B <- A)
-private struct A: TableRecord {
-    static let b = belongsTo(B.self)
-    static let c = hasOne(B.c, through: b) // case 1: A -> B -> C
-    static let d = hasOne(B.d, through: b) // case 2: A -> B <- D
-    static let e = belongsTo(E.self)
-    static let f1 = hasOne(C.f, through: c) // case 5: A -> (B -> C) -> F
-    static let f2 = hasOne(B.f, through: b) // case 6: A -> B -> (C -> F)
-}
-
-private struct B: TableRecord {
-    static let a = hasOne(A.self)
-    static let c = belongsTo(C.self)
-    static let d = hasOne(D.self)
-    static let e = hasOne(A.e, through: a) // case 3: B <- A -> E
-    static let f = hasOne(C.f, through: c)
-}
-
-private struct C: TableRecord {
-    static let a = hasOne(B.a, through: b) // case 4: C <- B <- A
-    static let b = hasOne(B.self)
-    static let f = belongsTo(F.self)
-}
-
-private struct D: TableRecord {
-}
-
-private struct E: TableRecord {
-}
-
-private struct F: TableRecord {
-    static let c = hasOne(C.self)
-    static let b = hasOne(C.b, through: c)
-    static let a1 = hasOne(C.a, through: c) // case 7: F <- (C <- B) <- A
-    static let a2 = hasOne(B.a, through: b) // case 8: F <- C <- (B <- A)
-}
-
 class AssociationHasOneThroughSQLTests: GRDBTestCase {
+    
+    func testBelongsToBelongsTo() throws {
+        struct A: TableRecord {
+            static let b = belongsTo(B.self)
+            static let c = hasOne(B.c, through: b)
+        }
+        struct B: TableRecord {
+            static let c = belongsTo(C.self)
+        }
+        struct C: TableRecord {
+        }
+        
+        let dbQueue = try makeDatabaseQueue()
+        try dbQueue.write { db in
+            try db.create(table: "c") { t in
+                t.autoIncrementedPrimaryKey("id")
+            }
+            try db.create(table: "b") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("cId").references("c")
+            }
+            try db.create(table: "a") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("bId").references("b")
+            }
+            
+            do {
+                try assertEqualSQL(db, A.including(optional: A.c), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(required: A.c), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(optional: A.c), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(required: A.c), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+            }
+            do {
+                try assertEqualSQL(db, A.including(optional: A.c).including(optional: A.b), """
+                    SELECT "a".*, "b".*, "c".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(optional: A.c).including(required: A.b), """
+                    SELECT "a".*, "b".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(optional: A.c).joining(optional: A.b), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(optional: A.c).joining(required: A.b), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+            }
+            do {
+                try assertEqualSQL(db, A.including(required: A.c).including(optional: A.b), """
+                    SELECT "a".*, "b".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(required: A.c).including(required: A.b), """
+                    SELECT "a".*, "b".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(required: A.c).joining(optional: A.b), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.including(required: A.c).joining(required: A.b), """
+                    SELECT "a".*, "c".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+            }
+            do {
+                try assertEqualSQL(db, A.joining(optional: A.c).including(optional: A.b), """
+                    SELECT "a".*, "b".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(optional: A.c).including(required: A.b), """
+                    SELECT "a".*, "b".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(optional: A.c).joining(optional: A.b), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(optional: A.c).joining(required: A.b), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    LEFT JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+            }
+            do {
+                try assertEqualSQL(db, A.joining(required: A.c).including(optional: A.b), """
+                    SELECT "a".*, "b".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(required: A.c).including(required: A.b), """
+                    SELECT "a".*, "b".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(required: A.c).joining(optional: A.b), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+                try assertEqualSQL(db, A.joining(required: A.c).joining(required: A.b), """
+                    SELECT "a".* \
+                    FROM "a" \
+                    JOIN "b" ON ("b"."id" = "a"."bId") \
+                    JOIN "c" ON ("c"."id" = "b"."cId")
+                    """)
+            }
+        }
+    }
+    
+    func testBelongsToHasOne() throws {
+        
+    }
+    
+    func testHasOneBelongsTo() throws {
+        
+    }
+    
+    func testHasOneHasOne() throws {
+        
+    }
+    
+    func testBelongsToBelongsToBelongsTo() throws {
+        
+    }
+    
+    func testBelongsToBelongsToHasOne() throws {
+        
+    }
+    
+    func testBelongsToHasOneBelongsTo() throws {
+        
+    }
+    
+    func testBelongsToHasOneHasOne() throws {
+        
+    }
+    
+    func testHasOneBelongsToBelongsTo() throws {
+        
+    }
+    
+    func testHasOneBelongsToHasOne() throws {
+        
+    }
+    
+    func testHasOneHasOneBelongsTo() throws {
+        
+    }
+    
+    func testHasOneHasOneHasOne() throws {
+        
+    }
 }

@@ -67,7 +67,7 @@ extension AssociationQuery {
             joinOperator: joinOperator,
             joinCondition: association.joinCondition,
             query: association.query(joinOperator))
-        return joining(join, forKey: association.key)
+        return joining(join, forKey: association.leftKey)
     }
     
     func joining(_ join: AssociationJoin, forKey key: String) -> AssociationQuery {

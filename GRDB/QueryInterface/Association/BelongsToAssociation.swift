@@ -68,6 +68,11 @@ public struct BelongsToAssociation<Origin, Destination>: ToOneAssociation {
     public var key: String
     
     /// :nodoc:
+    public var leftKey: String {
+        return key
+    }
+    
+    /// :nodoc:
     public let joinCondition: JoinCondition
     
     private var query: AssociationQuery
