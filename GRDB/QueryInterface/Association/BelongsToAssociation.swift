@@ -67,15 +67,16 @@ public struct BelongsToAssociation<Origin, Destination>: ToOneAssociation {
 
     public var key: String
     
-    /// :nodoc:
-    public var leftKey: String {
-        return key
-    }
+//    /// :nodoc:
+//    public var leftKey: String {
+//        return key
+//    }
     
     /// :nodoc:
     public let joinCondition: JoinCondition
     
-    private var query: AssociationQuery
+    // TODO: make private
+    public var query: AssociationQuery
     
     init(key: String, joinCondition: JoinCondition, query: AssociationQuery) {
         self.key = key
@@ -89,16 +90,32 @@ public struct BelongsToAssociation<Origin, Destination>: ToOneAssociation {
         return association
     }
     
-    /// :nodoc:
-    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
-        return query
-    }
+//    /// :nodoc:
+//    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
+//        return query
+//    }
     
     /// :nodoc:
     public func mapQuery(_ transform: (AssociationQuery) -> AssociationQuery) -> BelongsToAssociation<Origin, Destination> {
         var association = self
         association.query = transform(query)
         return association
+    }
+    
+    public func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery {
+        let join = AssociationJoin(
+            joinOperator: joinOperator,
+            joinCondition: self.joinCondition,
+            query: self.query)
+        return query.appendingJoin(join, forKey: self.key)
+    }
+    
+    public func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery {
+        let join = AssociationJoin(
+            joinOperator: joinOperator,
+            joinCondition: self.joinCondition,
+            query: self.query)
+        return query.appendingJoin(join, forKey: self.key)
     }
 }
 

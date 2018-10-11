@@ -1,40 +1,49 @@
 /// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
 ///
+public protocol AssociationBase {
+    var joinCondition: JoinCondition { get }
+    func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> Self
+    func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery
+    func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery
+}
+
+/// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
+///
 /// The base protocol for all associations that define a connection between two
 /// record types.
-public protocol Association: DerivableRequest {
+public protocol Association: AssociationBase, DerivableRequest {
     associatedtype OriginRowDecoder
     associatedtype RowDecoder
     
-    /// TODO
-    var leftKey: String { get }
+//    /// TODO
+//    var leftKey: String { get }
+//
+//    /// The association key defines how rows fetched from this association
+//    /// should be consumed.
+//    ///
+//    /// For example:
+//    ///
+//    ///     struct Player: TableRecord {
+//    ///         // The default key of this association is the name of the
+//    ///         // database table for teams, let's say "team":
+//    ///         static let team = belongsTo(Team.self)
+//    ///     }
+//    ///     print(Player.team.key) // Prints "team"
+//    ///
+//    ///     // Consume rows:
+//    ///     let request = Player.including(required: Player.team)
+//    ///     for row in Row.fetchAll(db, request) {
+//    ///         let team: Team = row["team"] // the association key
+//    ///     }
+//    ///
+//    /// The key can be redefined with the `forKey` method:
+//    ///
+//    ///     let request = Player.including(required: Player.team.forKey("custom"))
+//    ///     for row in Row.fetchAll(db, request) {
+//    ///         let team: Team = row["custom"]
+//    ///     }
+//    var key: String { get }
 
-    /// The association key defines how rows fetched from this association
-    /// should be consumed.
-    ///
-    /// For example:
-    ///
-    ///     struct Player: TableRecord {
-    ///         // The default key of this association is the name of the
-    ///         // database table for teams, let's say "team":
-    ///         static let team = belongsTo(Team.self)
-    ///     }
-    ///     print(Player.team.key) // Prints "team"
-    ///
-    ///     // Consume rows:
-    ///     let request = Player.including(required: Player.team)
-    ///     for row in Row.fetchAll(db, request) {
-    ///         let team: Team = row["team"] // the association key
-    ///     }
-    ///
-    /// The key can be redefined with the `forKey` method:
-    ///
-    ///     let request = Player.including(required: Player.team.forKey("custom"))
-    ///     for row in Row.fetchAll(db, request) {
-    ///         let team: Team = row["custom"]
-    ///     }
-    var key: String { get }
-    
     /// Creates an association with the given key.
     ///
     /// This new key impacts how rows fetched from the resulting association
@@ -51,14 +60,19 @@ public protocol Association: DerivableRequest {
     ///     }
     func forKey(_ key: String) -> Self
     
-    /// :nodoc:
-    func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery
-    
-    /// :nodoc:
-    var joinCondition: JoinCondition { get }
-    
-    /// :nodoc:
-    func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> Self
+    // TODO: remove
+    var query: AssociationQuery { get }
+
+//    /// :nodoc:
+//    func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery
+
+//    /// :nodoc:
+//    var joinCondition: JoinCondition { get }
+//
+//    /// :nodoc:
+//    func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> Self
+//    func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery
+//    func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery
 }
 
 extension Association {
@@ -311,28 +325,28 @@ extension Association {
     /// associated record are selected. The returned association does not
     /// require that the associated database table contains a matching row.
     public func including<A: Association>(optional association: A) -> Self where A.OriginRowDecoder == RowDecoder {
-        return mapQuery { $0.joining(.optional, association) }
+        return mapQuery { association.joinedQuery($0, with: .optional) }
     }
     
     /// Creates an association that includes another one. The columns of the
     /// associated record are selected. The returned association requires
     /// that the associated database table contains a matching row.
     public func including<A: Association>(required association: A) -> Self where A.OriginRowDecoder == RowDecoder {
-        return mapQuery { $0.joining(.required, association) }
+        return mapQuery { association.joinedQuery($0, with: .required) }
     }
     
     /// Creates an association that joins another one. The columns of the
     /// associated record are not selected. The returned association does not
     /// require that the associated database table contains a matching row.
     public func joining<A: Association>(optional association: A) -> Self where A.OriginRowDecoder == RowDecoder {
-        return mapQuery { $0.joining(.optional, association.select([])) }
+        return mapQuery { association.select([]).joinedQuery($0, with: .optional) }
     }
     
     /// Creates an association that joins another one. The columns of the
     /// associated record are not selected. The returned association requires
     /// that the associated database table contains a matching row.
     public func joining<A: Association>(required association: A) -> Self where A.OriginRowDecoder == RowDecoder {
-        return mapQuery { $0.joining(.required, association.select([])) }
+        return mapQuery { association.select([]).joinedQuery($0, with: .required) }
     }
 }
 
@@ -360,7 +374,7 @@ extension Association where OriginRowDecoder: MutablePersistableRecord {
         
         // Turn the association request into a query interface request:
         // JOIN association -> SELECT FROM association
-        return QueryInterfaceRequest(query(.required)) // TODO: reverse everything
+        return QueryInterfaceRequest(query) // TODO: reverse everything
             
             // Turn the JOIN condition into a regular WHERE condition
             .filter { db in

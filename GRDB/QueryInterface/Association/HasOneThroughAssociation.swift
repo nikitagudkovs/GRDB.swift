@@ -11,74 +11,92 @@ import Foundation
 public struct HasOneThroughAssociation<Origin, Destination>: ToOneAssociation {
     /// :nodoc:
     public typealias OriginRowDecoder = Origin
-    
+
     /// :nodoc:
     public typealias RowDecoder = Destination
     
-    private var middleQuery: (AssociationJoinOperator) -> AssociationQuery
-    private var middleJoinCondition: JoinCondition
-    private var middleKey: String
-    private var targetQuery: (AssociationJoinOperator) -> AssociationQuery
-    private var targetJoinCondition: JoinCondition
-    private var targetKey: String
+    private let pivot: AssociationBase
+    private let target: AssociationBase
 
     init(
-        middleQuery: @escaping (AssociationJoinOperator) -> AssociationQuery,
-        middleJoinCondition: JoinCondition,
-        middleKey: String,
-        targetQuery: @escaping (AssociationJoinOperator) -> AssociationQuery,
-        targetJoinCondition: JoinCondition,
-        targetKey: String)
+        pivot: AssociationBase,
+        target: AssociationBase)
     {
-        self.middleQuery = middleQuery
-        self.middleJoinCondition = middleJoinCondition
-        self.targetQuery = targetQuery
-        self.targetJoinCondition = targetJoinCondition
-        self.middleKey = middleKey
-        self.targetKey = targetKey
+        self.pivot = pivot
+        self.target = target
     }
 
-    public var key: String {
-        return targetKey
-    }
-    
-    /// :nodoc:
-    public var leftKey: String {
-        return middleKey
-    }
-    
-    /// :nodoc:
-    public var joinCondition: JoinCondition {
-        return middleJoinCondition
-    }
-    
-    /// :nodoc:
-    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
-        let join = AssociationJoin(
-            joinOperator: joinOperator,
-            joinCondition: targetJoinCondition,
-            query: targetQuery(joinOperator))
-        return middleQuery(joinOperator).joining(join, forKey: key)
-    }
-    
     public func forKey(_ key: String) -> HasOneThroughAssociation<Origin, Destination> {
-        var association = self
-        association.targetKey = key
-        return association
+        fatalError("Not implemented")
+//        return HasOneThroughAssociation(pivot: pivot, target: target.forKey(key))
     }
     
-    /// :nodoc:
-    public func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> HasOneThroughAssociation<Origin, Destination> {
-        var association = self
-        association.targetQuery = { transform(self.targetQuery($0)) }
-        return association
+    public var query: AssociationQuery {
+        fatalError("Not implemented")
     }
+
+    public var joinCondition: JoinCondition {
+        return pivot.joinCondition
+    }
+    
+    public func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> HasOneThroughAssociation<Origin, Destination> {
+        return HasOneThroughAssociation(pivot: pivot, target: target.mapQuery(transform))
+    }
+    
+    public func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery {
+        var query = pivot.joinedQuery(query, with: joinOperator)
+        query = target.joinedQuery(query, with: joinOperator)
+        return query
+    }
+    
+    public func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery {
+        var query = pivot.joinedQuery(query, with: joinOperator)
+        query = target.joinedQuery(query, with: joinOperator)
+        return query
+    }
+    
+
+//    public var key: String {
+//        return targetKey
+//    }
+//
+//    /// :nodoc:
+//    public var leftKey: String {
+//        return middleKey
+//    }
+//
+//    /// :nodoc:
+//    public var joinCondition: JoinCondition {
+//        return middleJoinCondition
+//    }
+//
+////    /// :nodoc:
+////    public func query(_ joinOperator: AssociationJoinOperator) -> AssociationQuery {
+////        let join = AssociationJoin(
+////            joinOperator: joinOperator,
+////            joinCondition: targetJoinCondition,
+////            query: targetQuery(joinOperator))
+////        return middleQuery(joinOperator).joining(join, forKey: key)
+////    }
+//
+//    public func forKey(_ key: String) -> HasOneThroughAssociation<Origin, Destination> {
+//        var association = self
+//        association.targetKey = key
+//        return association
+//    }
+//
+//    /// :nodoc:
+//    public func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> HasOneThroughAssociation<Origin, Destination> {
+//        var association = self
+//        association.targetQuery = { transform(self.targetQuery($0)) }
+//        return association
+//    }
 }
 
 extension TableRecord {
     public static func hasOne<MiddleAssociation, TargetAssociation>(
         _ target: TargetAssociation,
-        through middle: MiddleAssociation,
+        through pivot: MiddleAssociation,
         key: String? = nil)
         -> HasOneThroughAssociation<Self, TargetAssociation.RowDecoder>
         where MiddleAssociation: ToOneAssociation,
@@ -86,13 +104,11 @@ extension TableRecord {
         MiddleAssociation.OriginRowDecoder == Self,
         MiddleAssociation.RowDecoder == TargetAssociation.OriginRowDecoder
     {
-        return HasOneThroughAssociation(
-            middleQuery: { middle.query($0).select([]) },
-            middleJoinCondition: middle.joinCondition,
-            middleKey: middle.key,
-            targetQuery: target.query,
-            targetJoinCondition: target.joinCondition,
-            targetKey: key ?? target.key)
+        if let key = key {
+            return HasOneThroughAssociation(pivot: pivot, target: target.forKey(key))
+        } else {
+            return HasOneThroughAssociation(pivot: pivot, target: target)
+        }
     }
 }
 

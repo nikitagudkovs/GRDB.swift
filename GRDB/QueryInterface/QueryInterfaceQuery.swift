@@ -16,7 +16,10 @@ struct DatabasePromise<T> {
     }
 }
 
-struct QueryInterfaceQuery {
+/// [**Experimental**](http://github.com/groue/GRDB.swift#what-are-experimental-features)
+///
+/// :nodoc:
+public struct QueryInterfaceQuery {
     var source: SQLSource
     var selection: [SQLSelectable]
     var isDistinct: Bool
