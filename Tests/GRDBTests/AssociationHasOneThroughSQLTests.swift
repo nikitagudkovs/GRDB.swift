@@ -199,51 +199,51 @@ class AssociationHasOneThroughSQLTests: GRDBTestCase {
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(required: A.c), """
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.joining(optional: A.c), """
                     SELECT "a".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.joining(required: A.c), """
                     SELECT "a".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
             }
             do {
                 try assertEqualSQL(db, A.including(optional: A.c).including(optional: A.b), """
-                    SELECT "a".*, "b".*, "c".* \
+                    SELECT "a".*, "c".*, b".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(optional: A.c).including(required: A.b), """
-                    SELECT "a".*, "b".*, "c".* \
+                    SELECT "a".*, "c".*, b".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(optional: A.c).joining(optional: A.b), """
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(optional: A.c).joining(required: A.b), """
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
             }
             do {
@@ -251,25 +251,25 @@ class AssociationHasOneThroughSQLTests: GRDBTestCase {
                     SELECT "a".*, "b".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(required: A.c).including(required: A.b), """
                     SELECT "a".*, "b".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(required: A.c).joining(optional: A.b), """
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.including(required: A.c).joining(required: A.b), """
                     SELECT "a".*, "c".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    JOIN "c" ON ("c"."bId" = "b"."id")
+                    JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
             }
             do {
@@ -277,25 +277,25 @@ class AssociationHasOneThroughSQLTests: GRDBTestCase {
                     SELECT "a".*, "b".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.joining(optional: A.c).including(required: A.b), """
                     SELECT "a".*, "b".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.joining(optional: A.c).joining(optional: A.b), """
                     SELECT "a".* \
                     FROM "a" \
                     LEFT JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
                 try assertEqualSQL(db, A.joining(optional: A.c).joining(required: A.b), """
                     SELECT "a".* \
                     FROM "a" \
                     JOIN "b" ON ("b"."id" = "a"."bId") \
-                    LEFT JOIN "c" ON ("c"."bId" = "b"."id")
+                    LEFT JOIN "c" ON ("c"."bId" = "a"."id")
                     """)
             }
             do {

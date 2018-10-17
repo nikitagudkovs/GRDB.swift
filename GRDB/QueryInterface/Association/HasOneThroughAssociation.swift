@@ -105,9 +105,9 @@ extension TableRecord {
         MiddleAssociation.RowDecoder == TargetAssociation.OriginRowDecoder
     {
         if let key = key {
-            return HasOneThroughAssociation(pivot: pivot, target: target.forKey(key))
+            return HasOneThroughAssociation(pivot: pivot.select([]), target: target.forKey(key))
         } else {
-            return HasOneThroughAssociation(pivot: pivot, target: target)
+            return HasOneThroughAssociation(pivot: pivot.select([]), target: target)
         }
     }
 }
