@@ -2,7 +2,7 @@
 ///
 public protocol AssociationBase {
     var joinCondition: JoinCondition { get }
-    func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> Self
+    func mapQuery(_ transform: (AssociationQuery) -> AssociationQuery) -> Self
     func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery
     func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery
 }

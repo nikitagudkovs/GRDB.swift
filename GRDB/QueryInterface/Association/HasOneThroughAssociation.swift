@@ -39,14 +39,14 @@ public struct HasOneThroughAssociation<Origin, Destination>: ToOneAssociation {
         return pivot.joinCondition
     }
     
-    public func mapQuery(_ transform: @escaping (AssociationQuery) -> AssociationQuery) -> HasOneThroughAssociation<Origin, Destination> {
+    public func mapQuery(_ transform: (AssociationQuery) -> AssociationQuery) -> HasOneThroughAssociation<Origin, Destination> {
         return HasOneThroughAssociation(pivot: pivot, target: target.mapQuery(transform))
     }
     
     public func joinedQuery(_ query: AssociationQuery, with joinOperator: AssociationJoinOperator) -> AssociationQuery {
-        var query = pivot.joinedQuery(query, with: joinOperator)
-        query = target.joinedQuery(query, with: joinOperator)
-        return query
+        return pivot
+            .mapQuery { target.joinedQuery($0, with: joinOperator) }
+            .joinedQuery(query, with: joinOperator)
     }
     
     public func joinedQuery(_ query: QueryInterfaceQuery, with joinOperator: AssociationJoinOperator) -> QueryInterfaceQuery {
