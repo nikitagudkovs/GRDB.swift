@@ -41,8 +41,7 @@ final class SerializedDatabase {
         queue = SchedulingWatchdog.makeSerializedQueue(
             allowingDatabase: db,
             label: label,
-            qos: configuration.qos,
-            targetQueue: configuration.targetQueue)
+            configuration: config)
         self.path = path
         try queue.sync {
             try db.setup()
