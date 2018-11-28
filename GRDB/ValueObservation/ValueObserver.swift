@@ -27,8 +27,7 @@ class ValueObserver<Reducer: ValueReducer>: TransactionObserver {
         self.notificationQueue = notificationQueue
         self.onChange = onChange
         self.onError = onError
-        let reduceQueueLabel = (configuration.label ?? "GRDB") + ".ValueObservation.reducer"
-        self.reduceQueue = configuration.makeDispatchQueue(label: reduceQueueLabel)
+        self.reduceQueue = configuration.makeDispatchQueue(defaultLabel: "GRDB", purpose: "ValueObservation.reducer")
     }
     
     func observes(eventsOfKind eventKind: DatabaseEventKind) -> Bool {

@@ -172,7 +172,8 @@ public struct Configuration {
         return threadingMode.SQLiteOpenFlags | readWriteFlags
     }
     
-    func makeDispatchQueue(label: String) -> DispatchQueue {
+    func makeDispatchQueue(defaultLabel: String, purpose: String? = nil) -> DispatchQueue {
+        let label = (self.label ?? defaultLabel) + (purpose.map { "." + $0 } ?? "")
         if let targetQueue = targetQueue {
             return DispatchQueue(label: label, target: targetQueue)
         } else {
